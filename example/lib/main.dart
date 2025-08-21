@@ -10,6 +10,7 @@ import 'widgets/connection_form.dart';
 import 'widgets/connection_list.dart';
 import 'widgets/pid_windows_list.dart';
 import 'widgets/status_message.dart';
+import 'window_test_page.dart';
 
 class CapturedImage {
   final int windowId;
@@ -33,9 +34,87 @@ class RDPApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RDP Connection Manager',
+      title: 'macOS Window Controller',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: const RDPConnectionPage(),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('macOS Window Controller'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(
+              Icons.window,
+              size: 80,
+              color: Colors.blue,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'macOS Window Controller Plugin Test',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Test the window management functionality',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 48),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const WindowTestPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.window),
+              label: const Text('Test Window Functions'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const RDPConnectionPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.desktop_windows),
+              label: const Text('RDP Manager (Legacy)'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
