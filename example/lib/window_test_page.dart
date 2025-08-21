@@ -198,7 +198,7 @@ class _WindowTestPageState extends State<WindowTestPage> {
         title: const Text('Window Controller Test'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,7 +311,8 @@ class _WindowTestPageState extends State<WindowTestPage> {
 
             // Results
             const SizedBox(height: 16),
-            Expanded(
+            SizedBox(
+              height: 400, // 고정 높이 설정
               child: DefaultTabController(
                 length: 2,
                 child: Column(

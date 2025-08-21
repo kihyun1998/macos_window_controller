@@ -123,22 +123,67 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
     result(false)
   }
   
+  /// Captures a screenshot of the specified window
+  /// Requires Screen Recording permission on macOS 10.15+
   private func captureWindow(windowId: Int, result: @escaping FlutterResult) {
-    // CGWindowListCreateImage를 사용하여 특정 윈도우 캡처
+    // First check if window exists
+    guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
+      result(FlutterError(
+        code: "WINDOW_LIST_FAILED", 
+        message: "Failed to get window list from system", 
+        details: nil
+      ))
+      return
+    }
     
+    let windowExists = windowList.contains { windowInfo in
+      if let id = windowInfo[kCGWindowNumber as String] as? Int {
+        return id == windowId
+      }
+      return false
+    }
+    
+    if !windowExists {
+      result(FlutterError(
+        code: "WINDOW_NOT_FOUND",
+        message: "Window with ID \(windowId) not found or no longer exists",
+        details: nil
+      ))
+      return
+    }
+    
+    // Capture the window using Core Graphics
     guard let image = CGWindowListCreateImage(
       CGRect.null,
       .optionIncludingWindow,
       CGWindowID(windowId),
       [.boundsIgnoreFraming, .bestResolution]
     ) else {
-      result(FlutterError(code: "CAPTURE_FAILED", message: "Failed to capture window", details: nil))
+      result(FlutterError(
+        code: "CAPTURE_FAILED", 
+        message: "Failed to capture window \(windowId). Check Screen Recording permissions in System Preferences > Security & Privacy > Screen Recording",
+        details: nil
+      ))
       return
     }
     
-    // CGImage를 PNG 데이터로 변환
+    // Check if captured image is empty (indicates permission issue)
+    if image.width == 0 || image.height == 0 {
+      result(FlutterError(
+        code: "PERMISSION_DENIED",
+        message: "Screen Recording permission required. Enable it in System Preferences > Security & Privacy > Screen Recording",
+        details: nil
+      ))
+      return
+    }
+    
+    // Convert CGImage to PNG data
     guard let pngData = convertCGImageToPNGData(image) else {
-      result(FlutterError(code: "CONVERSION_FAILED", message: "Failed to convert image to PNG", details: nil))
+      result(FlutterError(
+        code: "CONVERSION_FAILED", 
+        message: "Failed to convert captured image to PNG format", 
+        details: nil
+      ))
       return
     }
     

@@ -2,11 +2,28 @@
 import 'dart:typed_data';
 import 'macos_window_controller_platform_interface.dart';
 
+/// Represents information about a macOS window
 class WindowInfo {
+  /// The unique identifier for the window
   final int windowId;
+  
+  /// The title/name of the window
   final String windowName;
+  
+  /// The process ID that owns this window
   final int ownerPID;
-  final double x, y, width, height;
+  
+  /// The x-coordinate of the window's position
+  final double x;
+  
+  /// The y-coordinate of the window's position  
+  final double y;
+  
+  /// The width of the window in pixels
+  final double width;
+  
+  /// The height of the window in pixels
+  final double height;
 
   WindowInfo({
     required this.windowId,
@@ -18,6 +35,7 @@ class WindowInfo {
     required this.height,
   });
 
+  /// Creates a WindowInfo from a map representation
   factory WindowInfo.fromMap(Map<String, dynamic> map) {
     final boundsRaw = map['bounds'];
     final bounds = Map<String, dynamic>.from(boundsRaw as Map);
@@ -39,37 +57,61 @@ class WindowInfo {
   }
 }
 
+/// Main controller class for managing macOS windows
 class MacosWindowController {
+  /// Returns the macOS platform version
   Future<String?> getPlatformVersion() {
     return MacosWindowControllerPlatform.instance.getPlatformVersion();
   }
 
-  /// 모든 윈도우 정보를 가져옵니다
+  /// Gets information about all visible windows on the screen
+  /// 
+  /// Returns a list of [WindowInfo] objects containing details about each window.
+  /// This method does not require special permissions.
   Future<List<WindowInfo>> getAllWindows() {
     return MacosWindowControllerPlatform.instance.getAllWindows();
   }
 
-  /// 특정 PID의 윈도우들을 가져옵니다
+  /// Gets all windows belonging to a specific process
+  /// 
+  /// [pid] The process ID to filter windows by
+  /// Returns a list of [WindowInfo] objects for windows owned by the specified process
   Future<List<WindowInfo>> getWindowsByPid(int pid) {
     return MacosWindowControllerPlatform.instance.getWindowsByPid(pid);
   }
 
-  /// 특정 윈도우 ID의 정보를 가져옵니다
+  /// Gets detailed information about a specific window
+  /// 
+  /// [windowId] The unique identifier of the window
+  /// Returns [WindowInfo] if the window exists, null otherwise
   Future<WindowInfo?> getWindowInfo(int windowId) {
     return MacosWindowControllerPlatform.instance.getWindowInfo(windowId);
   }
 
-  /// 윈도우가 유효한지 확인합니다
+  /// Checks if a window with the given ID still exists
+  /// 
+  /// [windowId] The unique identifier of the window
+  /// Returns true if the window exists and is visible, false otherwise
   Future<bool> isWindowValid(int windowId) {
     return MacosWindowControllerPlatform.instance.isWindowValid(windowId);
   }
 
-  /// 윈도우를 닫습니다
+  /// Attempts to close a window with the given ID
+  /// 
+  /// [windowId] The unique identifier of the window to close
+  /// Returns true if the close command was successful, false otherwise
+  /// Note: This method is not yet fully implemented
   Future<bool> closeWindow(int windowId) {
     return MacosWindowControllerPlatform.instance.closeWindow(windowId);
   }
 
-  /// 윈도우를 캡처합니다
+  /// Captures a screenshot of the specified window
+  /// 
+  /// [windowId] The unique identifier of the window to capture
+  /// Returns PNG image data as Uint8List if successful, null otherwise
+  /// 
+  /// Requires Screen Recording permission on macOS 10.15+.
+  /// Enable in System Preferences > Security & Privacy > Screen Recording
   Future<Uint8List?> captureWindow(int windowId) {
     return MacosWindowControllerPlatform.instance.captureWindow(windowId);
   }
