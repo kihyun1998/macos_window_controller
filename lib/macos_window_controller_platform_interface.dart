@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'macos_window_controller.dart';
 import 'macos_window_controller_method_channel.dart';
 
 abstract class MacosWindowControllerPlatform extends PlatformInterface {
@@ -25,5 +27,29 @@ abstract class MacosWindowControllerPlatform extends PlatformInterface {
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<List<WindowInfo>> getAllWindows() {
+    throw UnimplementedError('getAllWindows() has not been implemented.');
+  }
+
+  Future<List<WindowInfo>> getWindowsByPid(int pid) {
+    throw UnimplementedError('getWindowsByPid() has not been implemented.');
+  }
+
+  Future<WindowInfo?> getWindowInfo(int windowId) {
+    throw UnimplementedError('getWindowInfo() has not been implemented.');
+  }
+
+  Future<bool> isWindowValid(int windowId) {
+    throw UnimplementedError('isWindowValid() has not been implemented.');
+  }
+
+  Future<bool> closeWindow(int windowId) {
+    throw UnimplementedError('closeWindow() has not been implemented.');
+  }
+
+  Future<Uint8List?> captureWindow(int windowId) {
+    throw UnimplementedError('captureWindow() has not been implemented.');
   }
 }
