@@ -1,6 +1,50 @@
 import Cocoa
 import FlutterMacOS
 
+/// Error codes for window controller operations  
+enum WindowControllerError: String, CaseIterable {
+  case invalidArguments = "INVALID_ARGUMENTS"
+  case windowListFailed = "WINDOW_LIST_FAILED"  
+  case windowNotFound = "WINDOW_NOT_FOUND"
+  case permissionDenied = "PERMISSION_DENIED"
+  case screenRecordingRequired = "SCREEN_RECORDING_REQUIRED"
+  case captureFailed = "CAPTURE_FAILED"
+  case conversionFailed = "CONVERSION_FAILED"
+  case closeFailed = "CLOSE_FAILED"
+  case accessibilityRequired = "ACCESSIBILITY_REQUIRED"
+  case unknown = "UNKNOWN"
+  
+  var message: String {
+    switch self {
+    case .invalidArguments:
+      return "Invalid arguments provided"
+    case .windowListFailed:
+      return "Failed to get window list from system"
+    case .windowNotFound:
+      return "Window not found or no longer exists"
+    case .permissionDenied:
+      return "Required permissions not granted"
+    case .screenRecordingRequired:
+      return "Screen Recording permission required. Enable in System Preferences > Security & Privacy > Screen Recording"
+    case .captureFailed:
+      return "Failed to capture window"
+    case .conversionFailed:
+      return "Failed to convert image format"
+    case .closeFailed:
+      return "Failed to close window"
+    case .accessibilityRequired:
+      return "Accessibility permission required. Enable in System Preferences > Security & Privacy > Accessibility"
+    case .unknown:
+      return "An unknown error occurred"
+    }
+  }
+  
+  /// Creates a FlutterError with this error code and message
+  func asFlutterError(details: String? = nil) -> FlutterError {
+    return FlutterError(code: self.rawValue, message: self.message, details: details)
+  }
+}
+
 public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "macos_window_controller", binaryMessenger: registrar.messenger)
@@ -19,44 +63,45 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
          let pid = args["pid"] as? Int {
         getWindowsByPid(pid: pid, result: result)
       } else {
-        result(FlutterError(code: "INVALID_ARGUMENTS", message: "PID is required", details: nil))
+        result(WindowControllerError.invalidArguments.asFlutterError(details: "PID is required"))
       }
     case "getWindowInfo":
       if let args = call.arguments as? [String: Any],
          let windowId = args["windowId"] as? Int {
         getWindowInfo(windowId: windowId, result: result)
       } else {
-        result(FlutterError(code: "INVALID_ARGUMENTS", message: "Window ID is required", details: nil))
+        result(WindowControllerError.invalidArguments.asFlutterError(details: "Window ID is required"))
       }
     case "isWindowValid":
       if let args = call.arguments as? [String: Any],
          let windowId = args["windowId"] as? Int {
         isWindowValid(windowId: windowId, result: result)
       } else {
-        result(FlutterError(code: "INVALID_ARGUMENTS", message: "Window ID is required", details: nil))
+        result(WindowControllerError.invalidArguments.asFlutterError(details: "Window ID is required"))
       }
     case "closeWindow":
       if let args = call.arguments as? [String: Any],
          let windowId = args["windowId"] as? Int {
         closeWindow(windowId: windowId, result: result)
       } else {
-        result(FlutterError(code: "INVALID_ARGUMENTS", message: "Window ID is required", details: nil))
+        result(WindowControllerError.invalidArguments.asFlutterError(details: "Window ID is required"))
       }
     case "captureWindow":
       if let args = call.arguments as? [String: Any],
          let windowId = args["windowId"] as? Int {
         captureWindow(windowId: windowId, result: result)
       } else {
-        result(FlutterError(code: "INVALID_ARGUMENTS", message: "Window ID is required", details: nil))
+        result(WindowControllerError.invalidArguments.asFlutterError(details: "Window ID is required"))
       }
     default:
       result(FlutterMethodNotImplemented)
     }
   }
   
+  /// Gets all visible windows on the screen
   private func getAllWindows(result: @escaping FlutterResult) {
     guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-      result([])
+      result(WindowControllerError.windowListFailed.asFlutterError(details: "CGWindowListCopyWindowInfo returned nil"))
       return
     }
     
@@ -67,9 +112,10 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
     result(windows)
   }
   
+  /// Gets all windows belonging to a specific process
   private func getWindowsByPid(pid: Int, result: @escaping FlutterResult) {
     guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-      result([])
+      result(WindowControllerError.windowListFailed.asFlutterError(details: "CGWindowListCopyWindowInfo returned nil"))
       return
     }
     
@@ -84,9 +130,10 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
     result(windows)
   }
   
+  /// Gets detailed information about a specific window
   private func getWindowInfo(windowId: Int, result: @escaping FlutterResult) {
     guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-      result(nil)
+      result(WindowControllerError.windowListFailed.asFlutterError(details: "CGWindowListCopyWindowInfo returned nil"))
       return
     }
     
@@ -98,12 +145,13 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
       }
     }
     
-    result(nil)
+    result(WindowControllerError.windowNotFound.asFlutterError(details: "Window ID \(windowId) not found"))
   }
   
+  /// Checks if a window with the given ID still exists
   private func isWindowValid(windowId: Int, result: @escaping FlutterResult) {
     guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-      result(false)
+      result(WindowControllerError.windowListFailed.asFlutterError(details: "CGWindowListCopyWindowInfo returned nil"))
       return
     }
     
@@ -118,9 +166,12 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
     result(false)
   }
   
+  /// Attempts to close a window with the given ID
+  /// Note: This method is not yet fully implemented
   private func closeWindow(windowId: Int, result: @escaping FlutterResult) {
-    // 윈도우 닫기는 구현이 복잡하므로 일단 false 리턴
-    result(false)
+    // TODO: Implement window closing functionality
+    // This would require Accessibility permissions and AXUIElement APIs
+    result(WindowControllerError.closeFailed.asFlutterError(details: "Window closing not yet implemented"))
   }
   
   /// Captures a screenshot of the specified window
@@ -128,11 +179,7 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
   private func captureWindow(windowId: Int, result: @escaping FlutterResult) {
     // First check if window exists
     guard let windowList = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]] else {
-      result(FlutterError(
-        code: "WINDOW_LIST_FAILED", 
-        message: "Failed to get window list from system", 
-        details: nil
-      ))
+      result(WindowControllerError.windowListFailed.asFlutterError(details: "CGWindowListCopyWindowInfo returned nil"))
       return
     }
     
@@ -144,11 +191,7 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
     }
     
     if !windowExists {
-      result(FlutterError(
-        code: "WINDOW_NOT_FOUND",
-        message: "Window with ID \(windowId) not found or no longer exists",
-        details: nil
-      ))
+      result(WindowControllerError.windowNotFound.asFlutterError(details: "Window ID \(windowId) not found"))
       return
     }
     
@@ -159,31 +202,19 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
       CGWindowID(windowId),
       [.boundsIgnoreFraming, .bestResolution]
     ) else {
-      result(FlutterError(
-        code: "CAPTURE_FAILED", 
-        message: "Failed to capture window \(windowId). Check Screen Recording permissions in System Preferences > Security & Privacy > Screen Recording",
-        details: nil
-      ))
+      result(WindowControllerError.captureFailed.asFlutterError(details: "CGWindowListCreateImage returned nil for window \(windowId)"))
       return
     }
     
     // Check if captured image is empty (indicates permission issue)
     if image.width == 0 || image.height == 0 {
-      result(FlutterError(
-        code: "PERMISSION_DENIED",
-        message: "Screen Recording permission required. Enable it in System Preferences > Security & Privacy > Screen Recording",
-        details: nil
-      ))
+      result(WindowControllerError.screenRecordingRequired.asFlutterError(details: "Captured image is empty, likely due to missing Screen Recording permission"))
       return
     }
     
     // Convert CGImage to PNG data
     guard let pngData = convertCGImageToPNGData(image) else {
-      result(FlutterError(
-        code: "CONVERSION_FAILED", 
-        message: "Failed to convert captured image to PNG format", 
-        details: nil
-      ))
+      result(WindowControllerError.conversionFailed.asFlutterError(details: "NSBitmapImageRep PNG conversion failed"))
       return
     }
     

@@ -28,9 +28,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
       }).toList();
       
       return windows;
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
     } catch (e) {
-      print('Error getting all windows: $e');
-      return [];
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to get all windows', cause: e);
     }
   }
 
@@ -45,9 +48,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
       }).toList();
       
       return windows;
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
     } catch (e) {
-      print('Error getting windows by PID $pid: $e');
-      return [];
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to get windows for PID $pid', cause: e);
     }
   }
 
@@ -59,9 +65,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
       
       final windowMap = Map<String, dynamic>.from(result as Map);
       return WindowInfo.fromMap(windowMap);
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
     } catch (e) {
-      print('Error getting window info for $windowId: $e');
-      return null;
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to get window info for $windowId', cause: e);
     }
   }
 
@@ -70,9 +79,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
     try {
       final bool result = await methodChannel.invokeMethod('isWindowValid', {'windowId': windowId});
       return result;
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
     } catch (e) {
-      print('Error checking window validity for $windowId: $e');
-      return false;
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to check window validity for $windowId', cause: e);
     }
   }
 
@@ -81,9 +93,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
     try {
       final bool result = await methodChannel.invokeMethod('closeWindow', {'windowId': windowId});
       return result;
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
     } catch (e) {
-      print('Error closing window $windowId: $e');
-      return false;
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to close window $windowId', cause: e);
     }
   }
 
@@ -92,9 +107,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
     try {
       final Uint8List? result = await methodChannel.invokeMethod('captureWindow', {'windowId': windowId});
       return result;
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
     } catch (e) {
-      print('Error capturing window $windowId: $e');
-      return null;
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to capture window $windowId', cause: e);
     }
   }
 }

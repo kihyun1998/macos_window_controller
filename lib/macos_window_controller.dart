@@ -2,6 +2,83 @@
 import 'dart:typed_data';
 import 'macos_window_controller_platform_interface.dart';
 
+/// Error codes for macOS window controller operations
+enum WindowControllerError {
+  /// Invalid arguments passed to the method
+  invalidArguments('INVALID_ARGUMENTS', 'Invalid arguments provided'),
+  
+  /// Failed to retrieve window list from system
+  windowListFailed('WINDOW_LIST_FAILED', 'Failed to get window list from system'),
+  
+  /// Window with specified ID not found
+  windowNotFound('WINDOW_NOT_FOUND', 'Window not found or no longer exists'),
+  
+  /// Permission denied for the operation
+  permissionDenied('PERMISSION_DENIED', 'Required permissions not granted'),
+  
+  /// Screen recording permission required
+  screenRecordingRequired('SCREEN_RECORDING_REQUIRED', 'Screen Recording permission required'),
+  
+  /// Failed to capture window
+  captureFailed('CAPTURE_FAILED', 'Failed to capture window'),
+  
+  /// Failed to convert image format
+  conversionFailed('CONVERSION_FAILED', 'Failed to convert image format'),
+  
+  /// Window close operation failed
+  closeFailed('CLOSE_FAILED', 'Failed to close window'),
+  
+  /// Accessibility permission required
+  accessibilityRequired('ACCESSIBILITY_REQUIRED', 'Accessibility permission required'),
+  
+  /// Unknown or unspecified error
+  unknown('UNKNOWN', 'An unknown error occurred');
+
+  const WindowControllerError(this.code, this.message);
+  
+  /// The error code string
+  final String code;
+  
+  /// Human-readable error message
+  final String message;
+  
+  /// Creates a WindowControllerError from an error code string
+  static WindowControllerError fromCode(String code) {
+    for (final error in WindowControllerError.values) {
+      if (error.code == code) {
+        return error;
+      }
+    }
+    return WindowControllerError.unknown;
+  }
+}
+
+/// Exception thrown by window controller operations
+class WindowControllerException implements Exception {
+  /// The error type
+  final WindowControllerError error;
+  
+  /// Additional details about the error
+  final String? details;
+  
+  /// Optional underlying cause
+  final dynamic cause;
+  
+  const WindowControllerException(this.error, {this.details, this.cause});
+  
+  @override
+  String toString() {
+    final buffer = StringBuffer('WindowControllerException: ${error.message}');
+    if (details != null) {
+      buffer.write(' - $details');
+    }
+    if (cause != null) {
+      buffer.write(' (caused by: $cause)');
+    }
+    return buffer.toString();
+  }
+}
+
 /// Represents information about a macOS window
 class WindowInfo {
   /// The unique identifier for the window
