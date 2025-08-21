@@ -103,9 +103,12 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
   }
 
   @override
-  Future<Uint8List?> captureWindow(int windowId) async {
+  Future<Uint8List?> captureWindow(int windowId, {WindowCaptureOptions options = WindowCaptureOptions.includeFrame}) async {
     try {
-      final Uint8List? result = await methodChannel.invokeMethod('captureWindow', {'windowId': windowId});
+      final Uint8List? result = await methodChannel.invokeMethod('captureWindow', {
+        'windowId': windowId,
+        'options': options.value,
+      });
       return result;
     } on PlatformException catch (e) {
       final error = WindowControllerError.fromCode(e.code);
@@ -113,6 +116,20 @@ class MethodChannelMacosWindowController extends MacosWindowControllerPlatform {
     } catch (e) {
       throw WindowControllerException(WindowControllerError.unknown, 
           details: 'Failed to capture window $windowId', cause: e);
+    }
+  }
+
+  @override
+  Future<Map<String, bool>> checkPermissions() async {
+    try {
+      final Map<dynamic, dynamic> result = await methodChannel.invokeMethod('checkPermissions');
+      return Map<String, bool>.from(result);
+    } on PlatformException catch (e) {
+      final error = WindowControllerError.fromCode(e.code);
+      throw WindowControllerException(error, details: e.message, cause: e);
+    } catch (e) {
+      throw WindowControllerException(WindowControllerError.unknown, 
+          details: 'Failed to check permissions', cause: e);
     }
   }
 }

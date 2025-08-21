@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:macos_window_controller/macos_window_controller.dart';
 
@@ -12,13 +13,15 @@ class WindowTestPage extends StatefulWidget {
 class _WindowTestPageState extends State<WindowTestPage> {
   final _windowController = MacosWindowController();
   final _pidController = TextEditingController();
-  
+
   List<WindowInfo> _allWindows = [];
   List<WindowInfo> _pidWindows = [];
   bool _isLoading = false;
   String _status = '';
   Uint8List? _capturedImage;
   int? _capturedWindowId;
+  WindowCaptureOptions _captureOptions = WindowCaptureOptions.includeFrame;
+  Map<String, bool>? _permissions;
 
   @override
   void dispose() {
@@ -84,6 +87,27 @@ class _WindowTestPageState extends State<WindowTestPage> {
     }
   }
 
+  Future<void> _checkPermissions() async {
+    setState(() {
+      _isLoading = true;
+      _status = 'Checking permissions...';
+    });
+
+    try {
+      final permissions = await _windowController.checkPermissions();
+      setState(() {
+        _permissions = permissions;
+        _status = 'Permissions checked - Screen Recording: ${permissions['screenRecording']}, Accessibility: ${permissions['accessibility']}';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _status = 'Error checking permissions: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   Widget _buildWindowTile(WindowInfo window) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -142,13 +166,19 @@ class _WindowTestPageState extends State<WindowTestPage> {
     });
 
     try {
-      final imageData = await _windowController.captureWindow(windowId);
-      
+      final imageData = await _windowController.captureWindow(
+        windowId,
+        options: _captureOptions,
+      );
+
+      print("windowId:$windowId,_captureOptions: $_captureOptions");
+
       if (imageData != null && imageData.isNotEmpty) {
         setState(() {
           _capturedImage = imageData;
           _capturedWindowId = windowId;
-          _status = 'Window $windowId captured successfully (${imageData.length} bytes)';
+          _status =
+              'Window $windowId captured successfully (${imageData.length} bytes) - ${_captureOptions == WindowCaptureOptions.contentOnly ? 'Content Only' : 'Include Frame'}';
           _isLoading = false;
         });
       } else {
@@ -209,6 +239,58 @@ class _WindowTestPageState extends State<WindowTestPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
+                    // Permissions Section
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _checkPermissions,
+                            icon: Icon(
+                              _permissions != null ? Icons.security : Icons.security_outlined,
+                              color: _permissions != null 
+                                ? (_permissions!['screenRecording']! && _permissions!['accessibility']! 
+                                  ? Colors.green : Colors.orange) 
+                                : null,
+                            ),
+                            label: const Text('Check Permissions'),
+                          ),
+                        ),
+                        if (_permissions != null) ...[
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    _permissions!['screenRecording']! ? Icons.check_circle : Icons.cancel,
+                                    color: _permissions!['screenRecording']! ? Colors.green : Colors.red,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text('Screen Recording', style: TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(
+                                    _permissions!['accessibility']! ? Icons.check_circle : Icons.cancel,
+                                    color: _permissions!['accessibility']! ? Colors.green : Colors.red,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text('Accessibility', style: TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _getAllWindows,
                       child: const Text('Get All Windows'),
@@ -234,11 +316,49 @@ class _WindowTestPageState extends State<WindowTestPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Capture Options:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<WindowCaptureOptions>(
+                            title: const Text('Include Frame'),
+                            subtitle: const Text('Capture entire window'),
+                            value: WindowCaptureOptions.includeFrame,
+                            groupValue: _captureOptions,
+                            onChanged: (WindowCaptureOptions? value) {
+                              setState(() {
+                                _captureOptions =
+                                    value ?? WindowCaptureOptions.includeFrame;
+                              });
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<WindowCaptureOptions>(
+                            title: const Text('Content Only'),
+                            subtitle: const Text('Exclude titlebar & frame'),
+                            value: WindowCaptureOptions.contentOnly,
+                            groupValue: _captureOptions,
+                            onChanged: (WindowCaptureOptions? value) {
+                              setState(() {
+                                _captureOptions =
+                                    value ?? WindowCaptureOptions.includeFrame;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-            
+
             // Status
             if (_status.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -329,7 +449,9 @@ class _WindowTestPageState extends State<WindowTestPage> {
                           // All Windows Tab
                           _allWindows.isEmpty
                               ? const Center(
-                                  child: Text('No windows loaded. Click "Get All Windows" to start.'),
+                                  child: Text(
+                                    'No windows loaded. Click "Get All Windows" to start.',
+                                  ),
                                 )
                               : ListView.builder(
                                   itemCount: _allWindows.length,
@@ -337,11 +459,13 @@ class _WindowTestPageState extends State<WindowTestPage> {
                                     return _buildWindowTile(_allWindows[index]);
                                   },
                                 ),
-                          
+
                           // PID Windows Tab
                           _pidWindows.isEmpty
                               ? const Center(
-                                  child: Text('No windows for the specified PID.'),
+                                  child: Text(
+                                    'No windows for the specified PID.',
+                                  ),
                                 )
                               : ListView.builder(
                                   itemCount: _pidWindows.length,

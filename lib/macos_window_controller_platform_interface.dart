@@ -49,7 +49,11 @@ abstract class MacosWindowControllerPlatform extends PlatformInterface {
     throw UnimplementedError('closeWindow() has not been implemented.');
   }
 
-  Future<Uint8List?> captureWindow(int windowId) {
+  Future<Uint8List?> captureWindow(int windowId, {WindowCaptureOptions options = WindowCaptureOptions.includeFrame}) {
     throw UnimplementedError('captureWindow() has not been implemented.');
+  }
+
+  Future<Map<String, bool>> checkPermissions() {
+    throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 }

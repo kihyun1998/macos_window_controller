@@ -53,6 +53,20 @@ enum WindowControllerError {
   }
 }
 
+/// Options for window capture behavior
+enum WindowCaptureOptions {
+  /// Capture the entire window including titlebar and frame
+  includeFrame('INCLUDE_FRAME'),
+  
+  /// Capture only the content area, excluding titlebar and frame
+  contentOnly('CONTENT_ONLY');
+
+  const WindowCaptureOptions(this.value);
+  
+  /// The string value sent to the native platform
+  final String value;
+}
+
 /// Exception thrown by window controller operations
 class WindowControllerException implements Exception {
   /// The error type
@@ -185,11 +199,21 @@ class MacosWindowController {
   /// Captures a screenshot of the specified window
   /// 
   /// [windowId] The unique identifier of the window to capture
+  /// [options] Capture options - defaults to includeFrame
   /// Returns PNG image data as Uint8List if successful, null otherwise
   /// 
   /// Requires Screen Recording permission on macOS 10.15+.
   /// Enable in System Preferences > Security & Privacy > Screen Recording
-  Future<Uint8List?> captureWindow(int windowId) {
-    return MacosWindowControllerPlatform.instance.captureWindow(windowId);
+  Future<Uint8List?> captureWindow(int windowId, {WindowCaptureOptions options = WindowCaptureOptions.includeFrame}) {
+    return MacosWindowControllerPlatform.instance.captureWindow(windowId, options: options);
+  }
+
+  /// Checks the current permission status for Screen Recording and Accessibility
+  /// 
+  /// Returns a Map with boolean values:
+  /// - 'screenRecording': true if Screen Recording permission is granted
+  /// - 'accessibility': true if Accessibility permission is granted
+  Future<Map<String, bool>> checkPermissions() {
+    return MacosWindowControllerPlatform.instance.checkPermissions();
   }
 }
