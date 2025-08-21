@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:macos_window_controller/macos_window_controller.dart';
 
@@ -16,6 +17,8 @@ class _WindowTestPageState extends State<WindowTestPage> {
   List<WindowInfo> _pidWindows = [];
   bool _isLoading = false;
   String _status = '';
+  Uint8List? _capturedImage;
+  int? _capturedWindowId;
 
   @override
   void dispose() {
@@ -109,6 +112,10 @@ class _WindowTestPageState extends State<WindowTestPage> {
               icon: const Icon(Icons.check_circle),
               onPressed: () => _checkWindowValid(window.windowId),
             ),
+            IconButton(
+              icon: const Icon(Icons.camera_alt),
+              onPressed: () => _captureWindow(window.windowId),
+            ),
           ],
         ),
       ),
@@ -124,6 +131,36 @@ class _WindowTestPageState extends State<WindowTestPage> {
     } catch (e) {
       setState(() {
         _status = 'Error checking window $windowId: $e';
+      });
+    }
+  }
+
+  Future<void> _captureWindow(int windowId) async {
+    setState(() {
+      _isLoading = true;
+      _status = 'Capturing window $windowId...';
+    });
+
+    try {
+      final imageData = await _windowController.captureWindow(windowId);
+      
+      if (imageData != null && imageData.isNotEmpty) {
+        setState(() {
+          _capturedImage = imageData;
+          _capturedWindowId = windowId;
+          _status = 'Window $windowId captured successfully (${imageData.length} bytes)';
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _status = 'Failed to capture window $windowId - no data returned';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _status = 'Error capturing window $windowId: $e';
+        _isLoading = false;
       });
     }
   }
@@ -215,6 +252,58 @@ class _WindowTestPageState extends State<WindowTestPage> {
                       color: Colors.blue.shade800,
                       fontWeight: FontWeight.w500,
                     ),
+                  ),
+                ),
+              ),
+            ],
+
+            // Captured Image Preview
+            if (_capturedImage != null) ...[
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Captured Window $_capturedWindowId',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _capturedImage = null;
+                                _capturedWindowId = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(
+                            _capturedImage!,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

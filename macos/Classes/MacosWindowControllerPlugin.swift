@@ -124,8 +124,30 @@ public class MacosWindowControllerPlugin: NSObject, FlutterPlugin {
   }
   
   private func captureWindow(windowId: Int, result: @escaping FlutterResult) {
-    // 윈도우 캡처는 구현이 복잡하므로 일단 nil 리턴
-    result(nil)
+    // CGWindowListCreateImage를 사용하여 특정 윈도우 캡처
+    
+    guard let image = CGWindowListCreateImage(
+      CGRect.null,
+      .optionIncludingWindow,
+      CGWindowID(windowId),
+      [.boundsIgnoreFraming, .bestResolution]
+    ) else {
+      result(FlutterError(code: "CAPTURE_FAILED", message: "Failed to capture window", details: nil))
+      return
+    }
+    
+    // CGImage를 PNG 데이터로 변환
+    guard let pngData = convertCGImageToPNGData(image) else {
+      result(FlutterError(code: "CONVERSION_FAILED", message: "Failed to convert image to PNG", details: nil))
+      return
+    }
+    
+    result(FlutterStandardTypedData(bytes: pngData))
+  }
+  
+  private func convertCGImageToPNGData(_ cgImage: CGImage) -> Data? {
+    let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+    return bitmapRep.representation(using: .png, properties: [:])
   }
   
   private func parseWindowInfo(_ windowInfo: [String: Any]) -> [String: Any]? {
